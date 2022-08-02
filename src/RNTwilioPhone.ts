@@ -137,6 +137,7 @@ class RNTwilioPhone {
   ) {
     const accessToken = await RNTwilioPhone.fetchAccessToken();
     const params: ConnectParams = { to };
+    let { uuid } = additionalParams
 
     if (from) {
       params.from = from;
@@ -147,7 +148,7 @@ class RNTwilioPhone {
       ...additionalParams,
     });
 
-    const uuid = ramdomUuid().toLowerCase();
+    uuid = uuid || ramdomUuid().toLowerCase();
     RNTwilioPhone.activeCall = { uuid: null, sid: null, payload: null };
 
     RNCallKeep.startCall(uuid, to, calleeName, 'generic');
