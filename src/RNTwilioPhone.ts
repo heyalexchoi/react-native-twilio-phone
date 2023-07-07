@@ -425,6 +425,20 @@ class RNTwilioPhone {
   }
 
   private static addCall(call: Call) {
+    // adding this de-dup logic since we're seeing duplicate calls which means
+    // calls don't get removed properly
+    // for now assuming if uuid or sid matches we don't need to add it again
+    const matchingCall = RNTwilioPhone.calls.find(existingCall => {
+      const uuidMatches = call.uuid && existingCall.uuid === call.uuid
+      const sidMatches = call.sid && existingCall.sid === call.sid
+      return uuidMatches || sidMatches
+    });
+
+    if (matchingCall) {
+      console.log('rntwiliophone addCall skipping call because it already exists. call: ', call)
+      return;
+    }
+
     RNTwilioPhone.calls.push(call);
   }
 
