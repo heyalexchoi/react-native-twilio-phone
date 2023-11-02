@@ -1,5 +1,10 @@
 import TwilioVoice
 
+let audioCodecMap = [
+    "pcmu": PcmuCodec(),
+    "opus": OpusCodec()
+]
+
 @objc(TwilioPhone)
 class TwilioPhone: RCTEventEmitter {
     var hasListeners = false
@@ -196,12 +201,16 @@ class TwilioPhone: RCTEventEmitter {
         activeCall.sendDigits(digits)
     }
     
-    @objc(startCall:withParams:)
-    func startCall(accessToken: String, params: [String: String]) {
+    @objc(startCall:withParams:preferredAudioCodecs:)
+    func startCall(accessToken: String, params: [String: String], preferredAudioCodecs: [String]?) {
         NSLog("[TwilioPhone] Starting call")
         
         let connectOptions = ConnectOptions(accessToken: accessToken) { builder in
             builder.params = params
+            
+            if let preferredAudioCodecs = preferredAudioCodecs {
+                builder.preferredAudioCodecs = preferredAudioCodecs.compactMap { audioCodecMap[$0] ?? nil }
+            }
         }
         
         let call = TwilioVoiceSDK.connect(options: connectOptions, delegate: self)
