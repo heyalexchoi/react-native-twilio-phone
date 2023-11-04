@@ -242,7 +242,8 @@ class TwilioPhoneModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
-  fun startCall(accessToken: String, params: ReadableMap) {
+  fun startCall(accessToken: String, params: ReadableMap, preferredAudioCodecs: ReadableArray? = null) {
+    // TODO: use preferredAudioCodecs
     Log.i(tag, "Starting call")
 
     val connectParams = mutableMapOf<String, String>()
