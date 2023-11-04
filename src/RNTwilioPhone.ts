@@ -22,7 +22,7 @@ interface FirebaseMessagingModule {
 let messaging: FirebaseMessagingModule;
 
 if (Platform.OS === 'android') {
-  messaging = require('@react-native-firebase/messaging')
+  messaging = require('@react-native-firebase/messaging').default
 }
 
 export type RNTwilioPhoneOptions = {
