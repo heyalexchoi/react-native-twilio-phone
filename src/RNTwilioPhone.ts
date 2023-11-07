@@ -54,13 +54,15 @@ class RNTwilioPhone {
   static calls: Call[] = [];
 
   private static fetchAccessToken: () => Promise<string>;
+  private static extractCallUUID?: (payload: Record<string, string>) => string;
   private static deviceToken: string | null = null;
   private static activeCall: Call | null = null;
 
   static initialize(
     callKeepOptions: IOptions,
     fetchAccessToken: () => Promise<string>,
-    options = defaultOptions
+    options = defaultOptions,
+    extractCallUUID?: (payload: Record<string, string>) => string,
   ) {
     const unsubscribeCallKeep = RNTwilioPhone.initializeCallKeep(
       callKeepOptions,
@@ -68,6 +70,7 @@ class RNTwilioPhone {
       options
     );
 
+    RNTwilioPhone.extractCallUUID = extractCallUUID;
     const unsubscribeRegisterAndroid = RNTwilioPhone.registerAndroid();
     const unsubscribeRegisterIOS = RNTwilioPhone.registerIOS();
 
@@ -227,11 +230,23 @@ class RNTwilioPhone {
     const subscriptions = [
       twilioPhoneEmitter.addListener(
         EventType.CallInvite,
-        ({ callSid, from }) => {
+        ({ callSid, from, customParameters }) => {
           // Incoming call is already reported to CallKit on iOS
           if (Platform.OS === 'android') {
-            const uuid = ramdomUuid().toLowerCase();
-            RNTwilioPhone.addCall({ uuid, sid: callSid, payload: null });
+
+            const uuid = RNTwilioPhone.extractCallUUID?.(customParameters) || ramdomUuid().toLowerCase();
+            console.debug('rntwiliophone listenTwilioPhone incoming call customParameters: ', customParameters)
+            console.debug('rntwiliophone listenTwilioPhone incoming call uuid: ', uuid)
+
+            // const uuid = ramdomUuid().toLowerCase();
+            RNTwilioPhone.addCall({ 
+              uuid, 
+              sid: callSid, 
+              payload: {
+                twi_from: from, // a little funny but this is how it comes in ios
+                customParameters,
+              }
+            });
 
             RNCallKeep.displayIncomingCall(uuid, from);
           }
