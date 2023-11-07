@@ -78,6 +78,13 @@ class TwilioPhoneModule(reactContext: ReactApplicationContext) :
         params.putString("callSid", callInvite.callSid)
         params.putString("from", from.replace("client:", ""))
 
+        val convertedCustomParameters: WritableMap = Arguments.createMap().apply {
+          callInvite.customParameters.forEach { (key, value) ->
+            putString(key, value)
+          }
+        }
+        params.putMap("customParameters", convertedCustomParameters)
+
         sendEvent(reactApplicationContext, "CallInvite", params)
       }
 
