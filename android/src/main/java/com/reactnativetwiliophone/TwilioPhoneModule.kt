@@ -21,6 +21,9 @@ class TwilioPhoneModule(reactContext: ReactApplicationContext) :
 
   private var callListener = callListener()
 
+  private var statsListener = statsListener()
+  private var callStats = mutableListOf<StatsReport>()
+
   private var audioManager: AudioManager =
     reactContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
@@ -158,6 +161,51 @@ class TwilioPhoneModule(reactContext: ReactApplicationContext) :
     }
 
     Log.e(tag, "Unknown sid to perform end-call action with")
+  }
+
+  @ReactMethod
+  fun getCallStats(callSid: String, promise: Promise) {
+    Log.i(tag, "Getting stats for $callSid")
+
+    try {
+      val activeCall = activeCalls[callSid]
+      if (activeCall == null) {
+        promise.resolve(null)
+        return
+      }
+
+      activeCall.getStats(statsListener)
+      var statsArray = Arguments.createArray()
+      for (stats in callStats) {
+        var statsMap = Arguments.createMap()
+
+        var localStatsArray = Arguments.createArray()
+        val localStats = stats.localAudioTrackStats
+        for (trackStats in localStats) {
+          var map = Arguments.createMap()
+          map.putInt("audioLevel", trackStats.audioLevel)
+          map.putInt("jitter", trackStats.jitter)
+          map.putInt("roundTripTime", trackStats.roundTripTime.toInt())
+          localStatsArray.pushMap(map)
+        }
+        statsMap.putArray("localAudioTrackStats", localStatsArray)
+
+        var remoteStatsArray = Arguments.createArray()
+        val remoteStats = stats.remoteAudioTrackStats
+        for (trackStats in remoteStats) {
+          var map = Arguments.createMap()
+          map.putInt("audioLevel", trackStats.audioLevel)
+          map.putInt("jitter", trackStats.jitter)
+          remoteStatsArray.pushMap(map)
+        }
+        statsMap.putArray("remoteAudioTrackStats", remoteStatsArray)
+
+        statsArray.pushMap(statsMap)
+      }
+      promise.resolve(statsArray)
+    } catch (e: Throwable) {
+      promise.reject(e)
+    }
   }
 
   @ReactMethod
@@ -379,6 +427,15 @@ class TwilioPhoneModule(reactContext: ReactApplicationContext) :
 
           sendEvent(reactApplicationContext, "CallDisconnected", params)
         }
+      }
+    }
+  }
+
+  private fun statsListener(): StatsListener {
+    return object : StatsListener {
+      override fun onStats(statsReports: List<StatsReport>) {
+        callStats.clear()
+        callStats.addAll(statsReports)
       }
     }
   }
