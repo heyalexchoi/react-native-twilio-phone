@@ -408,7 +408,8 @@ extension TwilioPhone: NotificationDelegate {
         if hasListeners {
             sendEvent(withName: "CallInvite", body: [
                 "callSid": callInvite.callSid,
-                "from": callInvite.from
+                "from": callInvite.from,
+                "customParameters": callInvite.customParameters,
             ])
         }
     }
